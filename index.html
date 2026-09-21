@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="ku" dir="rtl">
+<!DOCTYPE html><html lang="ku" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ai_image_app2</title>
-
-  <style>
+  <title>AI Image App</title>  <style>
     * {
       box-sizing: border-box;
     }
@@ -34,6 +31,33 @@
       margin-bottom: 25px;
     }
 
+    .upload-box {
+      background: white;
+      border: 2px dashed #bbb;
+      border-radius: 15px;
+      padding: 25px;
+      text-align: center;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+
+    .upload-box:hover {
+      border-color: #238636;
+    }
+
+    .upload-box input {
+      display: none;
+    }
+
+    #preview {
+      display: none;
+      width: 100%;
+      max-height: 450px;
+      object-fit: contain;
+      margin-top: 15px;
+      border-radius: 15px;
+    }
+
     textarea {
       width: 100%;
       min-height: 130px;
@@ -43,6 +67,7 @@
       font-size: 18px;
       resize: vertical;
       direction: rtl;
+      margin-bottom: 5px;
     }
 
     button {
@@ -57,8 +82,13 @@
       cursor: pointer;
     }
 
+    button:hover {
+      background: #1b6f2c;
+    }
+
     button:disabled {
       background: #999;
+      cursor: not-allowed;
     }
 
     #status {
@@ -77,76 +107,305 @@
       border-radius: 15px;
       box-shadow: 0 4px 15px rgba(0,0,0,.15);
     }
-  </style>
-</head>
 
-<body>
+    .remove-btn {
+      background: #d33;
+      margin-top: 10px;
+    }
 
-  <div class="container">
+    .remove-btn:hover {
+      background: #b22;
+    }
+  </style></head><body>  <div class="container"><h1>🎨 AI Image App</h1>
 
-    <h1>🎨 AI Image App</h1>
+<div class="subtitle">
+  وێنە دروست بکە یان وێنەیەک بە AI دەستکاری بکە
+</div>
 
-    <div class="subtitle">
-      وێنە دروست بکە بە نووسینی داواکارییەکەت
-    </div>
+<!-- Upload -->
+<label class="upload-box">
+  📷
+  <br><br>
+  <strong>وێنەکەت هەڵبژێرە</strong>
+  <br>
+  <small>کلیک بکە بۆ Upload کردنی وێنە</small>
 
-    <textarea
-      id="prompt"
-      placeholder="نموونە: شارێکی جوان لە شەوی باراناوی، بە شێوازی سینەمایی"
-    ></textarea>
+  <input
+    type="file"
+    id="imageInput"
+    accept="image/*"
+    onchange="handleImageUpload(event)"
+  >
 
-    <button id="generateBtn" onclick="generateImage()">
-      🎨 دروستکردنی وێنە
-    </button>
+  <img id="preview" alt="Preview">
+</label>
 
-    <div id="status"></div>
+<button
+  id="removeBtn"
+  class="remove-btn"
+  style="display:none;"
+  onclick="removeImage()"
+>
+  🗑️ سڕینەوەی وێنە
+</button>
 
-    <div id="result"></div>
+<!-- Prompt -->
+<textarea
+  id="prompt"
+  placeholder="نموونە: جلوبەرگی ئەم کەسە بگۆڕە بۆ جلوبەرگی کوردی، ڕووخسار و شێوەی کەسەکە وەک خۆی بهێڵەوە"
+></textarea>
 
-  </div>
+<button id="generateBtn" onclick="generateImage()">
+  ✨ AI Edit / دروستکردنی وێنە
+</button>
 
-  <script>
-    function generateImage() {
+<div id="status"></div>
 
-      const prompt = document.getElementById("prompt").value.trim();
-      const button = document.getElementById("generateBtn");
-      const status = document.getElementById("status");
-      const result = document.getElementById("result");
+<div id="result"></div>
 
-      if (!prompt) {
-        status.textContent = "⚠️ تکایە سەرەتا داواکارییەک بنووسە.";
+  </div>  <script>
+
+    let uploadedImageData = null;
+
+    // ==============================
+    // Upload Image
+    // ==============================
+
+    function handleImageUpload(event) {
+
+      const file = event.target.files[0];
+
+      if (!file) {
         return;
       }
 
-      button.disabled = true;
-      status.textContent = "⏳ وێنەکە لە دروستکردندایە...";
-      result.innerHTML = "";
+      if (!file.type.startsWith("image/")) {
+        alert("تکایە تەنها فایلێکی وێنە هەڵبژێرە.");
+        return;
+      }
 
-      const imageUrl =
-        "https://image.pollinations.ai/prompt/" +
-        encodeURIComponent(prompt) +
-        "?width=1024&height=1024&nologo=true";
+      const reader = new FileReader();
 
-      const image = new Image();
+      reader.onload = function(e) {
 
-      image.onload = function () {
-        result.innerHTML = "";
-        result.appendChild(image);
+        uploadedImageData = e.target.result;
 
-        status.textContent = "✅ وێنەکە ئامادەیە!";
-        button.disabled = false;
+        const preview = document.getElementById("preview");
+        const removeBtn = document.getElementById("removeBtn");
+
+        preview.src = uploadedImageData;
+        preview.style.display = "block";
+
+        removeBtn.style.display = "block";
+
       };
 
-      image.onerror = function () {
+      reader.readAsDataURL(file);
+    }
+
+
+    // ==============================
+    // Remove Image
+    // ==============================
+
+    function removeImage() {
+
+      uploadedImageData = null;
+
+      document.getElementById("imageInput").value = "";
+      document.getElementById("preview").style.display = "none";
+      document.getElementById("preview").src = "";
+
+      document.getElementById("removeBtn").style.display = "none";
+    }
+
+
+    // ==============================
+    // Generate / Edit Image
+    // ==============================
+
+    async function generateImage() {
+
+      const prompt =
+        document.getElementById("prompt").value.trim();
+
+      const button =
+        document.getElementById("generateBtn");
+
+      const status =
+        document.getElementById("status");
+
+      const result =
+        document.getElementById("result");
+
+
+      if (!prompt) {
+
+        status.textContent =
+          "⚠️ تکایە سەرەتا فرمانەکە بنووسە.";
+
+        return;
+      }
+
+
+      button.disabled = true;
+
+      result.innerHTML = "";
+
+      status.textContent =
+        "⏳ AI لەسەر وێنەکە کار دەکات...";
+
+
+      try {
+
+        // ======================================
+        // MODE 1: AI EDIT
+        // ======================================
+
+        if (uploadedImageData) {
+
+          const response = await fetch(
+            "https://gen.pollinations.ai/v1/images/edits",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json"
+              },
+
+              body: JSON.stringify({
+
+                model:
+                  "black-forest-labs/flux.1-kontext-pro",
+
+                prompt: prompt,
+
+                image: uploadedImageData
+
+              })
+            }
+          );
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              "AI Edit request failed"
+            );
+          }
+
+
+          const data = await response.json();
+
+
+          let imageUrl = null;
+
+
+          if (
+            data.data &&
+            data.data[0]
+          ) {
+
+            imageUrl =
+              data.data[0].url ||
+              (
+                data.data[0].b64_json
+                  ? "data:image/png;base64," +
+                    data.data[0].b64_json
+                  : null
+              );
+
+          }
+
+
+          if (!imageUrl) {
+
+            throw new Error(
+              "No image returned"
+            );
+          }
+
+
+          showResult(imageUrl);
+
+        }
+
+        // ======================================
+        // MODE 2: TEXT TO IMAGE
+        // ======================================
+
+        else {
+
+          const imageUrl =
+            "https://image.pollinations.ai/prompt/" +
+            encodeURIComponent(prompt) +
+            "?width=1024&height=1024&nologo=true";
+
+
+          showResult(imageUrl);
+
+        }
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
         status.textContent =
           "❌ کێشەیەک ڕوویدا. تکایە دووبارە هەوڵ بدە.";
 
+      }
+
+      finally {
+
         button.disabled = false;
+
+      }
+
+    }
+
+
+    // ==============================
+    // Show Result
+    // ==============================
+
+    function showResult(imageUrl) {
+
+      const status =
+        document.getElementById("status");
+
+      const result =
+        document.getElementById("result");
+
+
+      const image =
+        new Image();
+
+
+      image.onload = function() {
+
+        result.innerHTML = "";
+
+        result.appendChild(image);
+
+        status.textContent =
+          "✅ وێنەکە ئامادەیە!";
+
       };
 
-      image.src = imageUrl;
-    }
-  </script>
 
-</body>
+      image.onerror = function() {
+
+        status.textContent =
+          "❌ نەتوانرا وێنەکە پیشان بدرێت.";
+
+      };
+
+
+      image.src = imageUrl;
+
+    }
+
+  </script></body>
 </html>
